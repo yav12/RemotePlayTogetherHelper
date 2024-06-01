@@ -17,7 +17,7 @@ class Forms:
         self.settings = settings
 
     def cls(self):
-        os.system('cls')
+        os.system('printf "\033c"')
         print(Const.banner)
 
     def printc(self, text, color=Const.W):
@@ -203,29 +203,27 @@ class Forms:
             elif c[0] == "q":
                 sys.exit(0)
             elif c == "uninstall":
-                path = Path(os.getenv("TEMP"))
+                path = Path('/tmp')
                 if hostgame is not None:
                     modifiedpath = Path(hostgame["path"])
                 os.chdir(Const.reldir.parent)
-                with open("%s/RemotePlayTogetherHelperUninstaller.bat" % path.__str__(), "w") as f:
-                    f.write(("@echo off\r\n" \
-                             "echo This .bat file is written to the TEMP directory and will delete the RemotePlayTogetherHelper\r\n" \
-                             "timeout 5 /nobreak\r\n" \
-                             "echo. & echo Killing now the RemotePlayTogetherHelper task.\r\n" \
-                             "TASKKILL /F /pid {pid}\r\n" \
-                             "echo. & echo Deleting the RemotePlayTogetherHelper executable and all its components.\r\n" \
-                             "rmdir /Q /S \"{parentpath}\"\r\n" \
-                             + (("timeout 5 /nobreak\r\n" \
-                                 "echo. & echo Moving the Host game back to the original folder.\r\n" \
-                                 "move /Y \"{modifiedpath}\" \"{parentpath}\"\r\n").format(parentpath=Const.reldir,
+                with open("%s/RemotePlayTogetherHelperUninstaller.sh" % path.__str__(), "w") as f:
+                    f.write(("#!/usr/bin/env bash\n" \
+                             "echo This .bat file is written to the /tmp directory and will delete the RemotePlayTogetherHelper\n" \
+                             "sleep 5\n" \
+                             "echo 'Killing now the RemotePlayTogetherHelper process'\n" \
+                             "kill -9 {pid}\n" \
+                             "echo 'Deleting the RemotePlayTogetherHelper executable and all its components.'\n" \
+                             "rm -rf \"{parentpath}\"\n" \
+                             + (("sleep 5\n" \
+                                 "echo. & echo Moving the Host game back to the original folder.\n" \
+                                 "mv \"{modifiedpath}\" \"{parentpath}\"\n").format(parentpath=Const.reldir,
                                                                                            modifiedpath=modifiedpath.parent) if hostgame is not None else "") \
-                             + "echo. & echo. & echo. & echo. & echo The RemotePlayTogetherHelper is now uninstalled!\r\n" \
-                               "echo. & echo. & echo. & Pause\r\n" \
-                               "echo. & echo Deleting now the uninstaller file itself. Ignore the following error message and press Enter or close the window.\r\n" \
-                               "DEL \"%~f0\"\r\n" \
-                               "Pause").format(pid=os.getpid(), parentpath=Const.reldir))
-                if os.path.isfile("%s/RemotePlayTogetherHelperUninstaller.bat" % path.__str__()):
-                    subprocess.Popen(["%s/RemotePlayTogetherHelperUninstaller.bat" % path.__str__()], shell=True,
+                             + "echo 'The RemotePlayTogetherHelper is now uninstalled!'\n" \
+                               "echo 'Deleting now the uninstaller file itself. Ignore the following error message and press Enter or close the window.'\n" \
+                               "rm \"%0\"\n").format(pid=os.getpid(), parentpath=Const.reldir))
+                if os.path.isfile("%s/RemotePlayTogetherHelperUninstaller.sh" % path.__str__()):
+                    subprocess.Popen(["bash", "%s/RemotePlayTogetherHelperUninstaller.bat" % path.__str__()], shell=True,
                                      stdin=None, stderr=None, close_fds=None)
                     sys.exit(0)
                 else:
